@@ -14,6 +14,7 @@ from . import banco, bcb, grafico
 
 PASTA_SAIDA = Path(__file__).resolve().parent.parent / "saida"
 IPCA = 433
+SELIC = 432
 
 
 def main() -> None:
@@ -26,15 +27,25 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    registros = bcb.buscar_serie(IPCA, atualizar=args.atualizar)
     con = banco.conectar()
-    banco.gravar_serie(con, "ipca", registros)
-
     PASTA_SAIDA.mkdir(exist_ok=True)
-    caminho = grafico.grafico_ipca(con, PASTA_SAIDA)
-    ultimo = registros[-1]
-    print(f"IPCA: {len(registros)} meses, o último em {ultimo['data']} ({ultimo['valor']}%).")
-    print(f"Gráfico: saida/{caminho.name}")
+
+    registros_ipca = bcb.buscar_serie(IPCA, atualizar=args.atualizar)
+    banco.gravar_serie(con, "ipca", registros_ipca)
+    caminho_ipca = grafico.grafico_ipca(con, PASTA_SAIDA)
+    ultimo_ipca = registros_ipca[-1]
+    print(f"IPCA: {len(registros_ipca)} meses, o último em {ultimo_ipca['data']} ({ultimo_ipca['valor']}%).")
+    print(f"Gráfico: saida/{caminho_ipca.name}")
+
+    registros_selic = bcb.buscar_serie(SELIC, atualizar=args.atualizar, dias=365 * 4)
+    banco.gravar_serie(con, "selic", registros_selic)
+    caminho_selic = grafico.grafico_selic(con, PASTA_SAIDA)
+    ultimo_selic = registros_selic[-1]
+    print(
+        f"Selic: {len(registros_selic)} dias, a última em {ultimo_selic['data']} "
+        f"({ultimo_selic['valor']}%)."
+    )
+    print(f"Gráfico: saida/{caminho_selic.name}")
 
 
 if __name__ == "__main__":
